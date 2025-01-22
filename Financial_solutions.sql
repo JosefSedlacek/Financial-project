@@ -390,15 +390,313 @@ LIMIT 1
 
 
 -- Part 3
+SELECT
+    d2.district_id,
 
+    count(distinct c.client_id) as customer_amount,
+    sum(l.amount) as loans_given_amount,
+    count(l.amount) as loans_given_count
+FROM
+        financial.loan as l
+    INNER JOIN
+        financial.account a using (account_id)
+    INNER JOIN
+        financial.disp as d using (account_id)
+    INNER JOIN
+        financial.client as c using (client_id)
+    INNER JOIN
+        financial.district as d2 on
+            c.district_id = d2.district_id
+WHERE True 
+    AND l.status IN ('A', 'C')
+    AND d.type = 'OWNER'
+GROUP BY d2.district_id;
+
+WITH cte AS (
+    SELECT
+        d2.district_id,
+
+        count(distinct c.client_id) as customer_amount,
+        sum(l.amount) as loans_given_amount,
+        count(l.amount) as loans_given_count
+    FROM
+            financial.loan as l
+        INNER JOIN
+            financial.account a using (account_id)
+        INNER JOIN
+            financial.disp as d using (account_id)
+        INNER JOIN
+            financial.client as c using (client_id)
+        INNER JOIN
+            financial.district as d2 on
+                c.district_id = d2.district_id
+    WHERE True 
+        AND l.status IN ('A', 'C')
+        AND d.type = 'OWNER'
+    GROUP BY d2.district_id
+    ;
+)
+SELECT *
+FROM cte;
+
+WITH cte AS (
+    SELECT d2.district_id,
+
+           count(distinct c.client_id) as customer_amount,
+           sum(l.amount)               as loans_given_amount,
+           count(l.amount)             as loans_given_count
+    FROM 
+            financial.loan as l
+        INNER JOIN
+            financial.account a using (account_id)
+        INNER JOIN
+            financial.disp as d using (account_id)
+        INNER JOIN
+            financial.client as c using (client_id)
+        INNER JOIN
+            financial.district as d2 on
+                c.district_id = d2.district_id
+    WHERE True
+      AND l.status IN ('A', 'C')
+      AND d.type = 'OWNER'
+    GROUP BY d2.district_id
+)
+SELECT
+    *,
+    loans_given_amount / SUM(loans_given_amount) OVER () AS share
+FROM cte
+ORDER BY share DESC;
 
 ---------------------------------------------------------------------------------------------
 -- Client Selection -------------------------------------------------------------------------
+SELECT
+    d2.district_id,
+
+    count(distinct c.client_id) as customer_amount,
+    sum(l.amount) as loans_given_amount,
+    count(l.amount) as loans_given_count
+FROM
+        financial.loan as l
+    INNER JOIN
+        financial.account a using (account_id)
+    INNER JOIN
+        financial.disp as d using (account_id)
+    INNER JOIN
+        financial.client as c using (client_id)
+    INNER JOIN
+        financial.district as d2 on
+            c.district_id = d2.district_id
+WHERE True 
+    AND l.status IN ('A', 'C')
+    AND d.type = 'OWNER'
+GROUP BY d2.district_id;
+
+SELECT
+    c.client_id,
+
+    sum(amount - payments) as client_balance,
+    count(loan_id) as loans_amount
+FROM
+        financial.loan as l
+    INNER JOIN
+        financial.account a using (account_id)
+    INNER JOIN
+        financial.disp as d using (account_id)
+    INNER JOIN
+        financial.client as c using (client_id)
+    INNER JOIN
+        financial.district as d2 on
+            c.district_id = d2.district_id
+WHERE True 
+    AND l.status IN ('A', 'C')
+    AND d.type = 'OWNER'
+    AND EXTRACT(YEAR FROM c.birth_date) > 1990
+GROUP BY c.client_id;
+
+SELECT
+    c.client_id,
+
+    sum(amount - payments) as client_balance,
+    count(loan_id) as loans_amount
+FROM loan as l
+         INNER JOIN
+     account a using (account_id)
+         INNER JOIN
+     disp as d using (account_id)
+         INNER JOIN
+     client as c using (client_id)
+WHERE True
+  AND l.status IN ('A', 'C')
+  AND d.type = 'OWNER'
+GROUP BY c.client_id
+HAVING
+    SUM(amount - payments) > 1000
+    AND COUNT(loan_id) > 5;
 
 
+-- Part 2
+AND EXTRACT(YEAR FROM c.birth_date) > 1990 -- for WHERE
+AND count(loan_id) > 5 -- for HAVING
 
+SELECT
+    c.client_id,
 
-
+    sum(amount - payments) as client_balance,
+    count(loan_id) as loans_amount
+FROM loan as l
+         INNER JOIN
+     account a using (account_id)
+         INNER JOIN
+     disp as d using (account_id)
+         INNER JOIN
+     client as c using (client_id)
+WHERE True
+  AND l.status IN ('A', 'C')
+  AND d.type = 'OWNER'
+--  AND EXTRACT(YEAR FROM c.birth_date) > 1990
+GROUP BY c.client_id
+HAVING
+    sum(amount - payments) > 1000
+--    and count(loan_id) > 5
+ORDER BY loans_amount DESC -- here we add descending sorting by number of loans
 
 ---------------------------------------------------------------------------------------------
 -- Expiring cards ---------------------------------------------------------------------------
+SELECT *
+FROM
+    INNER JOIN
+        financial.disp as d using (account_id)
+    INNER JOIN
+        financial.client as c using (client_id)
+    INNER JOIN
+        financial.district as d2 on
+            c.district_id = d2.district_id;
+
+SELECT 
+    c2.client_id,
+    c.card_id,
+
+    -- we calculate the expiration date according to the exercise conditions
+    DATE_ADD(c.issued, INTERVAL 3 year) as expiration_date,
+    d2.A3 as client_adress
+FROM 
+        financial.card as c
+    INNER JOIN
+        financial.disp as d using (disp_id)
+    INNER JOIN
+        financial.client as c2 using (client_id)
+    INNER JOIN
+        financial.district as d2 using (district_id);
+
+WITH cte AS (
+    SELECT 
+        c2.client_id,
+        c.card_id,
+        -- we calculate the expiration date according to the exercise conditions
+        DATE_ADD(c.issued, interval 3 year) as expiration_date,
+        d2.A3 as client_adress
+    FROM 
+            financial.card as c
+        INNER JOIN
+            financial.disp as d using (disp_id)
+        INNER JOIN
+            financial.client as c2 using (client_id)
+        INNER JOIN
+            financial.district as d2 using (district_id)
+)
+SELECT * 
+FROM cte;
+
+WITH cte AS (
+    SELECT 
+        c2.client_id,
+        c.card_id,
+
+        -- we calculate the expiration date according to the exercise conditions
+        DATE_ADD(c.issued, interval 3 year) as expiration_date,
+        d2.A3 as client_adress
+    FROM 
+            financial.card as c
+        INNER JOIN
+            financial.disp as d using (disp_id)
+        INNER JOIN
+            financial.client as c2 using (client_id)
+        INNER JOIN
+            financial.district as d2 using (district_id)
+)
+SELECT * 
+FROM cte
+-- now from the full list of cards we select only those that are about to expire
+WHERE '2000-01-01' BETWEEN DATE_ADD(expiration_date, INTERVAL -7 DAY) AND expiration_date;
+
+
+CREATE TABLE financial.cards_at_expiration
+(
+    client_id       int                      not null,
+    card_id         int default 0            not null,
+    expiration_date date                     null,
+    A3              varchar(15) charset utf8 not null,
+    generated_for_date date                     null
+);
+
+WITH cte AS (
+    SELECT 
+        c2.client_id,
+        c.card_id,
+
+        -- we calculate the expiration date according to the exercise conditions
+        DATE_ADD(c.issued, interval 3 year) as expiration_date,
+        d2.A3 as client_adress
+    FROM 
+            financial.card as c
+        INNER JOIN
+            financial.disp as d using (disp_id)
+        INNER JOIN
+            financial.client as c2 using (client_id)
+        INNER JOIN
+            financial.district as d2 using (district_id)
+)
+SELECT * 
+FROM cte
+-- now from the full list of cards we select only those that are about to expire
+WHERE p_date BETWEEN DATE_ADD(expiration_date, INTERVAL -7 DAY) AND expiration_date;
+
+DELIMITER $$
+DROP PROCEDURE IF EXISTS financial.generate_cards_at_expiration_report; 
+CREATE PROCEDURE financial.generate_cards_at_expiration_report(p_date DATE)
+BEGIN
+END;
+DELIMITER ;
+
+
+DELIMITER $$
+DROP PROCEDURE IF EXISTS financial.generate_cards_at_expiration_report; 
+CREATE PROCEDURE financial.generate_cards_at_expiration_report(p_date DATE)
+BEGIN
+    TRUNCATE TABLE financial.cards_at_expiration;
+    INSERT INTO financial.cards_at_expiration
+    WITH cte AS (
+        SELECT c2.client_id,
+               c.card_id,
+               date_add(c.issued, interval 3 year) as expiration_date,
+               d2.A3
+        FROM 
+            financial.card as c
+                 INNER JOIN
+             financial.disp as d using (disp_id)
+                 INNER JOIN
+             financial.client as c2 using (client_id)
+                 INNER JOIN
+             financial.district as d2 using (district_id)
+    )
+    SELECT
+           *,
+           p_date
+    FROM cte
+    WHERE p_date BETWEEN DATE_ADD(expiration_date, INTERVAL -7 DAY) AND expiration_date
+    ;
+END;
+DELIMITER ;
+
+CALL financial.generate_cards_at_expiration_report('2001-01-01');
+SELECT * FROM financial.cards_at_expiration;
