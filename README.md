@@ -16,7 +16,7 @@ Write a query that prepares a summary of the granted loans in the following dime
 - year, quarter, month,
 - year, quarter,
 - year,
-- total.
+- total.  
 Display the following information as the result of the summary:
 - total amount of loans,
 - average loan amount,
